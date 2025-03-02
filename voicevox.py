@@ -1,6 +1,7 @@
 import io
 import requests
 import soundfile as sf
+import numpy as np
 
 # SEE http://localhost:50021/docs
 
@@ -20,7 +21,7 @@ def print_speakers():
 
 
 # 音声合成を行う関数
-def vv_synthesize(text: str, speaker_id: int):
+def vv_synthesize(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
     """音声合成して再生する
 
     Args:
@@ -28,7 +29,7 @@ def vv_synthesize(text: str, speaker_id: int):
         speaker_id (int): キャラクターID
 
     Returns:
-        _type_: _description_
+        tuple[np.ndarray, int]: 音声データとサンプリングレート
     """
     # テキストから音声合成のためのクエリを作成
     query_payload = {"text": text, "speaker": speaker_id}
@@ -55,8 +56,5 @@ def vv_synthesize(text: str, speaker_id: int):
             data, _sr = sf.read(wav_file, dtype="float32")
         assert _sr == sr
         return data, sr
-        # sd.play(data, sr)
-        # sd.wait()
-        # return sd
     else:
         print(f"Error: {synthesis_response.text}")

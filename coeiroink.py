@@ -1,6 +1,7 @@
 import io
 import requests
 import soundfile as sf
+import numpy as np
 
 # SEE http://localhost:50032/docs
 
@@ -21,7 +22,9 @@ def print_speakers():
         print(f"Error: {response.status_code}")
 
 
-def ci_synthesize(text: str, speaker_uuid: str, style_id: int):
+def ci_synthesize(
+    text: str, speaker_uuid: str, style_id: int
+) -> tuple[np.ndarray, int]:
     """音声合成して再生する
 
     Args:
@@ -30,7 +33,7 @@ def ci_synthesize(text: str, speaker_uuid: str, style_id: int):
         style_id (int): スタイルID
 
     Returns:
-        _type_: _description_
+        tuple[np.ndarray, int]: 音声データとサンプリングレート
     """
     sr = 24000
     payload = {
@@ -52,8 +55,5 @@ def ci_synthesize(text: str, speaker_uuid: str, style_id: int):
             data, _sr = sf.read(wav_file, dtype="float32")
         assert _sr == sr
         return data, sr
-        # sd.play(sig, sr)
-        # sd.wait()
-        # return sd
     else:
         print(f"Error: {response.text}")

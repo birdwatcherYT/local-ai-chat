@@ -29,7 +29,7 @@ def chat_start(cfg):
         answer = ""
         for chunk in response_stream:
             print(chunk.content, end="", flush=True)
-            answer += chunk.content  # 履歴用に保存
+            answer += chunk.content
 
             if answer and answer[-1] in cfg.chat.streaming_voice_output:
                 sd.wait()
