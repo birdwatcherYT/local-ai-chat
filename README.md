@@ -4,9 +4,8 @@
 ## 環境構築
 - `uv sync`
     - pythonと[uv](https://github.com/astral-sh/uv)インストール済みであることが前提
-- `ollama run hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0`
-    - ollamaでモデルをDLしておく
-    - これは一例で任意のモデルを使えます
+- ollamaで日本語対応モデルを使えるようにしておく
+    - 例: `ollama run hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0`
 - 音声合成を使う場合（使う方をインストール）
     - [VOICEVOX](https://voicevox.hiroshiba.jp/)をインストール
     - [COEIROINK](https://coeiroink.com/download)をインストール
