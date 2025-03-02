@@ -1,0 +1,14 @@
+[project]
+name = "llm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "invoke>=2.2.0",
+    "langchain-ollama>=0.2.3",
+    "requests>=2.32.3",
+    "sounddevice>=0.5.1",
+    "soundfile>=0.13.1",
+    "vosk>=0.3.45",
+]

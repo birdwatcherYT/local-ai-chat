@@ -1,0 +1,28 @@
+chat:
+  system_prompt: | # ここにAIのキャラクターを書いておく
+    あなたはUSERの友達「AI」です。
+    USERが喜ぶことを言ってあげてください。
+  user_name: USER # 呼ばれたい名前に変える
+  ai_name: AI # 呼びたい名前に変える
+  initial_message:
+    | # 最初の例を入れておくと従いやすい（名前も上記設定に合わせること）
+    USER: こんにちは。
+    AI: こんにちは。今日もお疲れ様。
+  voice_input: false # true: 音声入力, false: テキスト入力
+  voice_output: voicevox # null, voicevox, coeiroink
+  streaming_voice_output: [] # ["。", "！", "？"]
+
+ollama:
+  model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
+  num_predict: 200
+  stop: ["\n"]
+
+voicevox:
+  speaker_id: 62
+
+coeiroink:
+  speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
+  style_id: 103
+
+vosk: # 音声認識のモデルへのパス
+  model_dir: ./vosk-model-ja-0.22
