@@ -3,6 +3,7 @@ from invoke import task
 
 @task
 def chat(c):
+    """AIとのチャット"""
     from chat import chat_start
 
     chat_start(c.config)

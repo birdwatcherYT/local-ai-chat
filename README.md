@@ -18,6 +18,9 @@
         - VOICEVOX: `uv run inv vv-list`（VOICEVOX GUI起動後）
         - COEIROINK: `uv run inv ci-list`（COEIROINK GUI起動後）
     - voskモデルへのパスを確認
+- `uv run inv --list`
+    - 動作確認
+    - invoke.yamlの読み込みでエラーが出る場合は、invoke.yamlの文字コードをUTF-8にしてください(Windows用にSHIFT-JISにしています)
 
 ## 使い方
 1. 音声合成を使う場合、裏でGUIを起動しておく
