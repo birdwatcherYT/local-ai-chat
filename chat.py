@@ -3,7 +3,8 @@ import sounddevice as sd
 from langchain_ollama import ChatOllama
 from voicevox import vv_synthesize_async
 from coeiroink import ci_synthesize_async
-from recog import SpeechRecognizer
+from vosk_asr import VoskSpeechToText
+from whisper_asr import WhisperSpeechToText
 
 
 async def playback_worker(queue: asyncio.Queue):
@@ -36,7 +37,8 @@ async def chat_start(cfg):
     prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}"
 
     if cfg.chat.voice_input:
-        recognizer = SpeechRecognizer(cfg.vosk.model_dir)
+        recognizer = VoskSpeechToText(cfg.vosk.model_dir)
+        recognizer = WhisperSpeechToText(**cfg.whisper, **cfg.webrtcvad)
 
     # 再生・合成用のグローバルなキューとワーカーを起動
     playback_queue = asyncio.Queue()

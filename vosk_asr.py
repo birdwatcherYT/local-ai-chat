@@ -4,7 +4,7 @@ import vosk
 import json
 
 
-class SpeechRecognizer:
+class VoskSpeechToText:
     def __init__(self, model_path: str):
         """音声認識モデルを初期化
 

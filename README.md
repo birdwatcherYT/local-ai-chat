@@ -11,6 +11,7 @@
     - [COEIROINK](https://coeiroink.com/download)をインストール
 - 音声認識を使う場合
     - [VOSK Models](https://alphacephei.com/vosk/models)から`vosk-model-ja-0.22`をDLして展開
+    - whisperを使う場合は設定不要（初回に自動ダウンロードされます）
 - `invoke.yaml`を環境に合わせる
     - LLMモデルの確認
     - 合成したいキャラクターのIDを確認
