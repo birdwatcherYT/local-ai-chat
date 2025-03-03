@@ -38,6 +38,6 @@ class VoskSpeechToText:
                 data = self.q.get()
                 if rec.AcceptWaveform(data):
                     result = json.loads(rec.Result())
-                    text = result.get("text", "").replace(" ", "")
+                    text = result.get("text", "")
                     if text:
                         return text
