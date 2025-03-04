@@ -12,16 +12,21 @@
 - 音声認識を使う場合
     - [VOSK Models](https://alphacephei.com/vosk/models)から`vosk-model-ja-0.22`をDLして展開
     - whisperを使う場合は設定不要（初回に自動ダウンロードされます）
-- `invoke.yaml`を環境に合わせる
+- 動作確認
+    - windows: `uv run inv -f invoke-shiftjis.yaml --list`
+    - mac: `uv run inv -f invoke-utf8.yaml --list`
+- `invoke-shiftjis.yaml`/`invoke-utf8.yaml`を環境に合わせる
     - LLMモデルの確認
     - 合成したいキャラクターのIDを確認
         - VOICEVOX: `uv run inv vv-list`（VOICEVOX GUI起動後）
         - COEIROINK: `uv run inv ci-list`（COEIROINK GUI起動後）
     - voskモデルへのパスを確認
-- `uv run inv --list`
-    - 動作確認
-    - invoke.yamlの読み込みでエラーが出る場合は、invoke.yamlの文字コードをUTF-8にしてください(Windows用にSHIFT-JISにしています)
+
+## Mac対応
+- uv sync時のvoskのエラー
+    - pyproject.tomlからvoskを削除してからuv.sync
+
 
 ## 使い方
 1. 音声合成を使う場合、裏でGUIを起動しておく
-2. `uv run inv chat`
+2. `uv run inv -f invoke-utf8.yaml chat`
