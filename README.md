@@ -15,7 +15,10 @@
 - 動作確認
     - windows: `uv run inv -f invoke-shiftjis.yaml --list`
     - mac: `uv run inv -f invoke-utf8.yaml --list`
-- `invoke-shiftjis.yaml`/`invoke-utf8.yaml`を環境に合わせる
+
+以下では`-f invoke-shiftjis.yaml`や`-f invoke-utf8.yaml`を省略して記述します。使う方を`invoke.yaml`としてリネームしてください。
+
+- `invoke.yaml`を環境に合わせる
     - LLMモデルの確認
     - 合成したいキャラクターのIDを確認
         - VOICEVOX: `uv run inv vv-list`（VOICEVOX GUI起動後）
@@ -29,4 +32,4 @@
 
 ## 使い方
 1. 音声合成を使う場合、裏でGUIを起動しておく
-2. `uv run inv -f invoke-utf8.yaml chat`
+2. `uv run inv chat`
