@@ -1,20 +1,21 @@
 import asyncio
 import sounddevice as sd
 from langchain_ollama import ChatOllama
+from invoke.config import Config
 from .tts.base import TextToSpeech
 from .asr.base import SpeechToText
 
 
-async def playback_worker(queue: asyncio.Queue, recognizer: SpeechToText):
+async def playback_worker(queue: asyncio.Queue, asr: SpeechToText):
     """再生キューから順次オーディオデータを取り出して再生するワーカー"""
     while True:
         data, sr = await queue.get()
-        if recognizer is not None:
-            recognizer.pause()  # マイクをOFFにする
+        if asr is not None:
+            asr.pause()  # マイクをOFFにする
         sd.play(data, sr)
         await asyncio.to_thread(sd.wait)
-        if recognizer is not None:
-            recognizer.resume()  # 再生終了後にマイクをONにする
+        if asr is not None:
+            asr.resume()  # 再生終了後にマイクをONにする
         queue.task_done()
 
 
@@ -22,7 +23,7 @@ async def synthesis_worker(
     synthesis_queue: asyncio.Queue,
     playback_queue: asyncio.Queue,
     tts: TextToSpeech,
-    tts_cfg,
+    tts_cfg: Config,
 ):
     """合成キューから順次テキストを取り出して音声合成し、再生キューに投入するワーカー"""
     if tts is None:
@@ -34,7 +35,7 @@ async def synthesis_worker(
         synthesis_queue.task_done()
 
 
-async def chat_start(cfg):
+async def chat_start(cfg: Config):
     # LLMの設定
     llm = ChatOllama(**cfg.ollama)
 
@@ -43,7 +44,7 @@ async def chat_start(cfg):
     if cfg.chat.voice_input == "vosk":
         from .asr.vosk_asr import VoskASR
 
-        asr = VoskASR(cfg.vosk.model_dir)
+        asr = VoskASR(**cfg.vosk)
     elif cfg.chat.voice_input == "whisper":
         from .asr.whisper_asr import WhisperASR
 
@@ -74,7 +75,9 @@ async def chat_start(cfg):
     asyncio.create_task(playback_worker(playback_queue, asr))
     asyncio.create_task(synthesis_worker(synthesis_queue, playback_queue, tts, tts_cfg))
 
-    print(f"Chat Start: voice_input={cfg.chat.voice_input}, voice_output={cfg.chat.voice_output}")
+    print(
+        f"Chat Start: voice_input={cfg.chat.voice_input}, voice_output={cfg.chat.voice_output}"
+    )
 
     user_name = cfg.chat.user_name
     ai_name = cfg.chat.ai_name
@@ -107,18 +110,14 @@ async def chat_start(cfg):
                 print(chunk.content, end="", flush=True)
                 answer += chunk.content
                 # 指定された文字が現れたタイミングで音声合成
-                if (
-                    tts is not None
-                    and answer
-                    and answer[-1] in cfg.chat.streaming_voice_output
-                ):
+                if answer and answer[-1] in cfg.chat.streaming_voice_output:
                     await synthesis_queue.put(answer)
                     prompt += answer
                     answer = ""
                 text_queue.task_done()
-            if tts is not None and answer:
+            if answer:
                 await synthesis_queue.put(answer)
-            prompt += answer
+                prompt += answer
             print()
 
         # テキスト処理タスクを開始

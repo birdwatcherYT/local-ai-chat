@@ -5,14 +5,14 @@ from .base import SpeechToText
 
 
 class VoskASR(SpeechToText):
-    def __init__(self, model_path: str):
+    def __init__(self, model_dir: str):
         """音声認識モデルを初期化
 
         Args:
-            model_path (str): Voskモデルのディレクトリパス
+            model_dir (str): Voskモデルのディレクトリパス
         """
         super().__init__()
-        self.model = vosk.Model(model_path)
+        self.model = vosk.Model(model_dir)
 
     def audio_input(self) -> str:
         """マイク入力から音声を認識し、テキストを返す
