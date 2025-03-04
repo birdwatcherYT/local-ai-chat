@@ -1,65 +1,90 @@
 import asyncio
 import sounddevice as sd
 from langchain_ollama import ChatOllama
-from .voicevox import vv_synthesize_async
-from .coeiroink import ci_synthesize_async
-from .aivisspeech import as_synthesize_async
+from .tts.base import TextToSpeech
+from .asr.base import SpeechToText
 
 
-async def playback_worker(queue: asyncio.Queue):
+async def playback_worker(queue: asyncio.Queue, recognizer: SpeechToText):
     """再生キューから順次オーディオデータを取り出して再生するワーカー"""
     while True:
         data, sr = await queue.get()
+        if recognizer is not None:
+            recognizer.pause()  # マイクをOFFにする
         sd.play(data, sr)
         await asyncio.to_thread(sd.wait)
+        if recognizer is not None:
+            recognizer.resume()  # 再生終了後にマイクをONにする
         queue.task_done()
 
 
 async def synthesis_worker(
-    synthesis_queue: asyncio.Queue, cfg, playback_queue: asyncio.Queue
+    synthesis_queue: asyncio.Queue,
+    playback_queue: asyncio.Queue,
+    tts: TextToSpeech,
+    tts_cfg,
 ):
     """合成キューから順次テキストを取り出して音声合成し、再生キューに投入するワーカー"""
+    if tts is None:
+        return
     while True:
         text_segment = await synthesis_queue.get()
-        if cfg.chat.voice_output == "voicevox":
-            data, sr = await vv_synthesize_async(text_segment, **cfg.voicevox)
-        elif cfg.chat.voice_output == "coeiroink":
-            data, sr = await ci_synthesize_async(text_segment, **cfg.coeiroink)
-        elif cfg.chat.voice_output == "aivisspeech":
-            data, sr = await as_synthesize_async(text_segment, **cfg.aivisspeech)
+        data, sr = await tts.synthesize_async(text_segment, **tts_cfg)
         await playback_queue.put((data, sr))
         synthesis_queue.task_done()
 
 
 async def chat_start(cfg):
+    # LLMの設定
     llm = ChatOllama(**cfg.ollama)
-    user_name = cfg.chat.user_name
-    ai_name = cfg.chat.ai_name
-    prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}"
 
+    # 音声認識の設定
+    asr: SpeechToText = None
     if cfg.chat.voice_input == "vosk":
-        from .vosk_asr import VoskSpeechToText
+        from .asr.vosk_asr import VoskASR
 
-        recognizer = VoskSpeechToText(cfg.vosk.model_dir)
+        asr = VoskASR(cfg.vosk.model_dir)
     elif cfg.chat.voice_input == "whisper":
-        from .whisper_asr import WhisperSpeechToText
+        from .asr.whisper_asr import WhisperASR
 
-        recognizer = WhisperSpeechToText(**cfg.whisper, **cfg.webrtcvad)
+        asr = WhisperASR(**cfg.whisper, **cfg.webrtcvad)
+
+    # 音声合成の設定
+    tts: TextToSpeech = None
+    tts_cfg = None
+    if cfg.chat.voice_output == "voicevox":
+        from .tts.voicevox import VoiceVox
+
+        tts = VoiceVox()
+        tts_cfg = cfg.voicevox
+    elif cfg.chat.voice_output == "coeiroink":
+        from .tts.coeiroink import CoeiroInk
+
+        tts = CoeiroInk()
+        tts_cfg = cfg.coeiroink
+    elif cfg.chat.voice_output == "aivisspeech":
+        from .tts.aivisspeech import AivisSpeech
+
+        tts = AivisSpeech()
+        tts_cfg = cfg.aivisspeech
 
     # 再生・合成用のグローバルなキューとワーカーを起動
     playback_queue = asyncio.Queue()
     synthesis_queue = asyncio.Queue()
-    asyncio.create_task(playback_worker(playback_queue))
-    asyncio.create_task(synthesis_worker(synthesis_queue, cfg, playback_queue))
+    asyncio.create_task(playback_worker(playback_queue, asr))
+    asyncio.create_task(synthesis_worker(synthesis_queue, playback_queue, tts, tts_cfg))
 
-    print("Chat Start")
+    print(f"Chat Start: voice_input={cfg.chat.voice_input}, voice_output={cfg.chat.voice_output}")
 
+    user_name = cfg.chat.user_name
+    ai_name = cfg.chat.ai_name
+    prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}"
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
         # ユーザー入力取得（音声入力の場合は recognizer.audio_input、テキストの場合は input()）
         if cfg.chat.voice_input:
             print(f"{user_name}: ", end="", flush=True)
-            user_input = await asyncio.to_thread(recognizer.audio_input)
+            user_input = await asyncio.to_thread(asr.audio_input)
             print(user_input, flush=True)
         else:
             user_input = await asyncio.to_thread(input, f"{user_name}: ")
@@ -81,15 +106,19 @@ async def chat_start(cfg):
                 # 生成されたチャンクを即座に表示
                 print(chunk.content, end="", flush=True)
                 answer += chunk.content
-                # streaming_voice_output で指定された文字が現れたタイミングで音声合成要求
-                if answer and answer[-1] in cfg.chat.streaming_voice_output:
+                # 指定された文字が現れたタイミングで音声合成
+                if (
+                    tts is not None
+                    and answer
+                    and answer[-1] in cfg.chat.streaming_voice_output
+                ):
                     await synthesis_queue.put(answer)
                     prompt += answer
                     answer = ""
                 text_queue.task_done()
-            if answer:
+            if tts is not None and answer:
                 await synthesis_queue.put(answer)
-                prompt += answer
+            prompt += answer
             print()
 
         # テキスト処理タスクを開始

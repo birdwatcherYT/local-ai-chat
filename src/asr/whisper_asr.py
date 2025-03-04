@@ -1,15 +1,13 @@
-import queue
 import sounddevice as sd
 import numpy as np
 import webrtcvad
 from faster_whisper import WhisperModel
 import wave
 from collections import deque
+from .base import SpeechToText
 
-# import time
 
-
-class WhisperSpeechToText:
+class WhisperASR(SpeechToText):
     def __init__(
         self,
         model_name: str,
@@ -25,12 +23,12 @@ class WhisperSpeechToText:
         Args:
             model_name (str): Faster-Whisperモデル名（例: "small", "turbo"）
         """
+        super().__init__()
         # VADの初期化
         self.vad = webrtcvad.Vad()
         self.vad.set_mode(sensitivity)  # 感度設定（0〜3、3が最も厳しい）
         # Whisperモデルのロード
         self.model = WhisperModel(model_name, compute_type=compute_type)
-        self.q = queue.Queue()
         self.buffer = []  # 音声データを蓄積するバッファ
         self.is_speaking = False  # 発話中かどうかのフラグ
         self.sample_rate = 16000  # サンプリングレート
@@ -38,20 +36,7 @@ class WhisperSpeechToText:
         self.hangover_threshold = hangover_threshold
         self.pre_buffer_frames = pre_buffer_frames
 
-    def _callback(self, indata, frames, time_info, status):
-        """音声データをキューに追加
-
-        Args:
-            indata: マイクからの生音声データ
-            frames: フレーム数
-            time_info: 時間情報
-            status: ステータス情報
-        """
-        if status:
-            print(status, flush=True)
-        self.q.put(bytes(indata))
-
-    def save_wav(self, file_name, audio_data):
+    def save_wav(self, file_name: str, audio_data: bytes):
         """音声データをWAVファイルとして保存
 
         Args:
@@ -87,6 +72,8 @@ class WhisperSpeechToText:
                 data = self.q.get()
                 # まずは常にプリバッファに追加
                 pre_buffer.append(data)
+                if not self.running:
+                    continue
                 # VADで音声区間を検出
                 is_speech = self.vad.is_speech(data, sample_rate=self.sample_rate)
 
@@ -106,9 +93,7 @@ class WhisperSpeechToText:
                         audio_bytes = b"".join(self.buffer)
 
                         # WAVファイルに保存（デバッグ用）
-                        # timestamp = time.strftime("%Y%m%d-%H%M%S")
-                        # file_name = f"segment_{timestamp}.wav"
-                        # self.save_wav(file_name, audio_bytes)
+                        # self.save_wav("temp.wav", audio_bytes)
 
                         # 音声データをfloat32のNumPyアレイに変換
                         audio = (
