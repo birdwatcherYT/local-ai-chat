@@ -25,7 +25,11 @@
         - COEIROINK: `uv run inv ci-list`（COEIROINK GUI起動後）
     - voskモデルへのパスを確認
 
-## Mac対応
+### Windows対応
+- uv sync時のbuildエラー
+    - visual studio build tools 2022でC++によるデスクトップ開発（MSVC、Windows11 SDK、CMake）をインストールしてからリトライ
+
+### Mac対応
 - uv sync時のvoskのエラー
     - pyproject.tomlからvoskを削除してからuv.sync
 
