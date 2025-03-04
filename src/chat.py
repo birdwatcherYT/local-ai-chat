@@ -1,8 +1,8 @@
 import asyncio
 import sounddevice as sd
 from langchain_ollama import ChatOllama
-from voicevox import vv_synthesize_async
-from coeiroink import ci_synthesize_async
+from .voicevox import vv_synthesize_async
+from .coeiroink import ci_synthesize_async
 
 
 async def playback_worker(queue: asyncio.Queue):
@@ -35,11 +35,11 @@ async def chat_start(cfg):
     prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}"
 
     if cfg.chat.voice_input == "vosk":
-        from vosk_asr import VoskSpeechToText
+        from .vosk_asr import VoskSpeechToText
 
         recognizer = VoskSpeechToText(cfg.vosk.model_dir)
     elif cfg.chat.voice_input == "whisper":
-        from whisper_asr import WhisperSpeechToText
+        from .whisper_asr import WhisperSpeechToText
 
         recognizer = WhisperSpeechToText(**cfg.whisper, **cfg.webrtcvad)
 
