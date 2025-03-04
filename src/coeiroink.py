@@ -8,7 +8,7 @@ import numpy as np
 # SEE http://localhost:50032/docs
 
 
-def print_speakers():
+def ci_print_speakers():
     """使えるキャラクター一覧を表示"""
     response = requests.get("http://localhost:50032/v1/speakers")
 

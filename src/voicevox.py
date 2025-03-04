@@ -8,9 +8,9 @@ import numpy as np
 # SEE http://localhost:50021/docs
 
 
-def print_speakers():
+def vv_print_speakers(port=50021):
     """使えるキャラクター一覧を表示"""
-    response = requests.get("http://localhost:50021/speakers")
+    response = requests.get(f"http://localhost:{port}/speakers")
 
     if response.status_code == 200:
         speakers = response.json()
@@ -22,8 +22,7 @@ def print_speakers():
         print(f"Error: {response.status_code}")
 
 
-# 音声合成を行う関数
-def vv_synthesize(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
+def vv_synthesize(text: str, speaker_id: int, port=50021) -> tuple[np.ndarray, int]:
     """音声合成して再生する
 
     Args:
@@ -36,7 +35,7 @@ def vv_synthesize(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
     # テキストから音声合成のためのクエリを作成
     query_payload = {"text": text, "speaker": speaker_id}
     query_response = requests.post(
-        "http://localhost:50021/audio_query", params=query_payload
+        f"http://localhost:{port}/audio_query", params=query_payload
     )
 
     if query_response.status_code != 200:
@@ -49,7 +48,7 @@ def vv_synthesize(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
     # クエリを元に音声データを生成
     synthesis_payload = {"speaker": speaker_id}
     synthesis_response = requests.post(
-        "http://localhost:50021/synthesis", params=synthesis_payload, json=query
+        f"http://localhost:{port}/synthesis", params=synthesis_payload, json=query
     )
 
     if synthesis_response.status_code == 200:
@@ -62,8 +61,9 @@ def vv_synthesize(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
         print(f"Error: {synthesis_response.text}")
 
 
-# 音声合成を行う非同期関数
-async def vv_synthesize_async(text: str, speaker_id: int) -> tuple[np.ndarray, int]:
+async def vv_synthesize_async(
+    text: str, speaker_id: int, port=50021
+) -> tuple[np.ndarray, int]:
     """非同期で音声合成を行う
 
     Args:
@@ -76,7 +76,7 @@ async def vv_synthesize_async(text: str, speaker_id: int) -> tuple[np.ndarray, i
     async with aiohttp.ClientSession() as session:
         query_payload = {"text": text, "speaker": speaker_id}
         async with session.post(
-            "http://localhost:50021/audio_query", params=query_payload
+            f"http://localhost:{port}/audio_query", params=query_payload
         ) as resp:
             if resp.status != 200:
                 print(f"Error in audio_query: {await resp.text()}")
@@ -86,7 +86,7 @@ async def vv_synthesize_async(text: str, speaker_id: int) -> tuple[np.ndarray, i
 
         synthesis_payload = {"speaker": speaker_id}
         async with session.post(
-            "http://localhost:50021/synthesis", params=synthesis_payload, json=query
+            f"http://localhost:{port}/synthesis", params=synthesis_payload, json=query
         ) as resp:
             if resp.status != 200:
                 print(f"Error: {await resp.text()}")

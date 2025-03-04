@@ -3,6 +3,7 @@ import sounddevice as sd
 from langchain_ollama import ChatOllama
 from .voicevox import vv_synthesize_async
 from .coeiroink import ci_synthesize_async
+from .aivisspeech import as_synthesize_async
 
 
 async def playback_worker(queue: asyncio.Queue):
@@ -24,6 +25,8 @@ async def synthesis_worker(
             data, sr = await vv_synthesize_async(text_segment, **cfg.voicevox)
         elif cfg.chat.voice_output == "coeiroink":
             data, sr = await ci_synthesize_async(text_segment, **cfg.coeiroink)
+        elif cfg.chat.voice_output == "aivisspeech":
+            data, sr = await as_synthesize_async(text_segment, **cfg.aivisspeech)
         await playback_queue.put((data, sr))
         synthesis_queue.task_done()
 
