@@ -99,3 +99,20 @@ def vosk_test(c: Config, loop: bool = False):
     else:
         text = asr.audio_input()
         print(text)
+
+
+
+@task
+def temp_test(c: Config, loop: bool = False):
+    """Whisperのテスト"""
+    from src.asr.temp import WhisperASR
+
+    print("読み取り開始")
+    asr = WhisperASR(**c.config.whisper, **c.config.webrtcvad)
+    if loop:
+        while True:
+            text = asr.audio_input()
+            print(text)
+    else:
+        text = asr.audio_input()
+        print(text)
