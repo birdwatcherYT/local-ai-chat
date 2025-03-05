@@ -1,13 +1,13 @@
 chat:
-  system_prompt: | # ここにAIのキャラクターを書いておく
-    あなたはUSERの友達「AI」です。
-    USERが喜ぶことを言ってあげてください。
   user_name: USER # 呼ばれたい名前に変える
   ai_name: AI # 呼びたい名前に変える
+  system_prompt: | # ここにAIのキャラクターを書いておく
+    あなたは{user_name}の友達「{ai_name}」です。
+    {user_name}が喜ぶことを言ってあげてください。
   initial_message:
-    | # 最初の例を入れておくと従いやすい（名前も上記設定に合わせること）
-    USER: こんにちは。
-    AI: こんにちは。今日もお疲れ様。
+    | # 最初の例を入れておくと従いやすい
+    {user_name}: こんにちは。
+    {ai_name}: こんにちは。今日もお疲れ様。
   voice_input: null # null, vosk, whisper
   voice_output: voicevox # null, voicevox, coeiroink, aivisspeech
   streaming_voice_output: ["。", "！", "？"]

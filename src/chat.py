@@ -81,10 +81,10 @@ async def chat_start(cfg: Config):
 
     user_name = cfg.chat.user_name
     ai_name = cfg.chat.ai_name
-    prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}"
+    prompt = f"system: {cfg.chat.system_prompt}\n{cfg.chat.initial_message}".format(user_name=user_name, ai_name=ai_name)
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
-        # ユーザー入力取得（音声入力の場合は recognizer.audio_input、テキストの場合は input()）
+        # ユーザー入力取得（音声入力の場合は asr.audio_input、テキストの場合は input()）
         if cfg.chat.voice_input:
             print(f"{user_name}: ", end="", flush=True)
             user_input = await asyncio.to_thread(asr.audio_input)
