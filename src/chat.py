@@ -50,9 +50,12 @@ def parse_message(message):
 async def chat_start(cfg: Config):
     user_name = cfg.chat.user.name
     ai_names = {f"ai{i}_name": ai["name"] for i, ai in enumerate(cfg.chat.ai)}
+    char_names = [user_name] + [ai["name"] for ai in cfg.chat.ai]
 
     # LLMの設定
-    cfg.ollama.stop = [word.format(user_name=user_name, **ai_names) for word in cfg.ollama.stop]
+    cfg.ollama.stop = [
+        word.format(user_name=user_name, **ai_names) for word in cfg.ollama.stop
+    ]
     llm = ChatOllama(**cfg.ollama)
 
     # 音声認識の設定
@@ -82,62 +85,65 @@ async def chat_start(cfg: Config):
         synthesis_worker(synthesis_queue, playback_queue, engines, ai_config)
     )
 
-    print(
-        f"Chat Start: voice_input={cfg.chat.voice_input}, voice_output={cfg.chat.voice_output}"
-    )
+    print(f"Chat Start: voice_input={cfg.chat.voice_input}")
 
     chara_prompt = "\n".join([f"{ai['name']}\n{ai['character']}" for ai in cfg.chat.ai])
-    prompt = f"system: {cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n\n{cfg.chat.initial_message}".format(
+    prompt = f"<system>\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n</system>\n{cfg.chat.initial_message}".format(
         user_name=user_name, **ai_names
     )
+    turn = user_name
+    print(f"{user_name}: ", end="", flush=True)
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
         # ユーザー入力取得（音声入力の場合は asr.audio_input、テキストの場合は input()）
-        if cfg.chat.voice_input:
-            print(f"{user_name}: ", end="", flush=True)
-            user_input = await asyncio.to_thread(asr.audio_input)
-            print(user_input, flush=True)
-        else:
-            user_input = await asyncio.to_thread(input, f"{user_name}: ")
+        if turn == user_name:
+            if cfg.chat.voice_input:
+                user_input = await asyncio.to_thread(asr.audio_input)
+                print(user_input, flush=True)
+            else:
+                user_input = await asyncio.to_thread(input)
 
-        prompt += f"\n{user_name}: {user_input}\n"
+            prompt += f"{user_input}\n"
+            turn = None
 
         # テキスト生成結果を受け取るためのキューを各ターンごとに作成
         text_queue = asyncio.Queue()
 
         async def process_text_queue():
-            nonlocal prompt
+            nonlocal prompt, turn
             answer = ""
-            turn = None
+
             while True:
                 chunk = await text_queue.get()
                 if chunk is None:
                     break  # ストリーム終了の合図
                 # 生成されたチャンクを即座に表示
-                print(chunk.content, end="", flush=True)
+                if turn:
+                    print(chunk.content, end="", flush=True)
                 answer += chunk.content
                 # 指定された文字が現れたタイミングで音声合成
-                if answer and answer[-1] in cfg.chat.streaming_voice_output:
-                    for ans in answer.split("\n"):
-                        if not ans:
-                            continue
-                        name, message = parse_message(ans)
-                        if name:
-                            turn = name
-                        await synthesis_queue.put((turn, message))
-                        prompt += ans
-                        answer = ""
+                if turn and answer and answer[-1] in cfg.chat.streaming_voice_output:
+                    await synthesis_queue.put((turn, answer))
+                    prompt += answer
+                    answer = ""
                 text_queue.task_done()
-            if answer:
-                for ans in answer.split("\n"):
-                    if not ans:
-                        continue
-                    name, message = parse_message(ans)
-                    if name:
-                        turn = name
-                    await synthesis_queue.put((turn, message))
-                    prompt += ans
-            print()
+            if turn and answer:
+                await synthesis_queue.put((turn, answer))
+                prompt += answer
+                answer = ""
+            if turn:
+                prompt += "\n"
+                turn = None
+                print()
+            elif answer in char_names:
+                turn = answer
+                prompt += f"{turn}: "
+                print(f"{turn}: ", end="", flush=True)
+                # print(": ", end="", flush=True)
+            # else:
+            #     print(answer)
+            #     print(prompt)
+            #     exit(1)
 
         # テキスト処理タスクを開始
         processing_task = asyncio.create_task(process_text_queue())

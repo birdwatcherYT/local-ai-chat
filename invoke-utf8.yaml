@@ -1,10 +1,10 @@
 chat:
-  user: 
-    name: USER # 呼ばれたい名前に変える
+  user:
+    name: 俺 # 呼ばれたい名前に変える
     character: | # あなたのプロフィール
       ・男
   ai:
-    - name: AI0 # 呼びたい名前に変える
+    - name: A # 呼びたい名前に変える
       character: | # ここにAIのキャラクターを書いておく
         ・{user_name}の女友達
         ・穏やかで人よく褒める優しい性格
@@ -12,10 +12,17 @@ chat:
         engine: voicevox # null, voicevox, coeiroink, aivisspeech
         config:
           speaker_id: 62
-    - name: AI1 # 呼びたい名前に変える
-      character: | # ここにAIのキャラクターを書いておく
+        # engine: coeiroink
+        # config:
+        #   speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
+        #   style_id: 103
+        # engine: aivisspeech
+        # config:
+        #   speaker_id: 888753762
+    - name: B
+      character: |
         ・{user_name}の女友達
-        ・ツンデレ
+        ・{ai0_name}と仲が良い
       voice:
         engine: voicevox # null, voicevox, coeiroink, aivisspeech
         config:
@@ -27,23 +34,12 @@ chat:
     {user_name}: こんにちは。
     {ai0_name}: こんにちは。今日もお疲れ様。
   voice_input: null # null, vosk, whisper
-  voice_output: voicevox # null, voicevox, coeiroink, aivisspeech
-  streaming_voice_output: ["。", "！", "？", "\n"]
+  streaming_voice_output: ["。", "！", "？", "!", "?"]
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
   num_predict: 200
-  stop: ["{user_name}:"]
-
-voicevox:
-  speaker_id: 62
-
-coeiroink:
-  speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
-  style_id: 103
-
-aivisspeech:
-  speaker_id: 888753762
+  stop: ["\n", ":"] # 発話終了と話者生成のためのstopワード
 
 vosk: # 音声認識のモデルへのパス
   model_dir: ./vosk-model-ja-0.22
