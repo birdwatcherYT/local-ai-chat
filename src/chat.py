@@ -50,7 +50,7 @@ def parse_message(message):
 async def chat_start(cfg: Config):
     user_name = cfg.chat.user.name
     ai_names = {f"ai{i}_name": ai["name"] for i, ai in enumerate(cfg.chat.ai)}
-    char_names = [user_name] + [ai["name"] for ai in cfg.chat.ai]
+    char_names = [ai["name"] for ai in cfg.chat.ai] + [user_name]
 
     # LLMの設定
     cfg.ollama.stop = [
@@ -91,6 +91,7 @@ async def chat_start(cfg: Config):
     prompt = f"<system>\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n</system>\n{cfg.chat.initial_message}".format(
         user_name=user_name, **ai_names
     )
+    prev_turn = None
     turn = user_name
     print(f"{user_name}: ", end="", flush=True)
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
@@ -104,13 +105,21 @@ async def chat_start(cfg: Config):
                 user_input = await asyncio.to_thread(input)
 
             prompt += f"{user_input}\n"
-            turn = None
+            if len(char_names) == 2:
+                prev_turn = turn
+                turn = char_names[0]
+                prompt += f"{turn}: "
+                print(f"{turn}: ", end="")
+            else:
+                prev_turn = turn
+                turn = None
+
 
         # テキスト生成結果を受け取るためのキューを各ターンごとに作成
         text_queue = asyncio.Queue()
 
         async def process_text_queue():
-            nonlocal prompt, turn
+            nonlocal prompt, turn, prev_turn
             answer = ""
 
             while True:
@@ -131,15 +140,22 @@ async def chat_start(cfg: Config):
                 await synthesis_queue.put((turn, answer))
                 prompt += answer
                 answer = ""
+
             if turn:
                 prompt += "\n"
-                turn = None
                 print()
-            elif answer in char_names:
+                if len(char_names) == 2:
+                    prev_turn = turn
+                    turn = char_names[1]
+                    prompt += f"{turn}: "
+                    print(f"{turn}: ", end="")
+                else:
+                    prev_turn = turn
+                    turn = None
+            elif answer in char_names and prev_turn != turn:
                 turn = answer
                 prompt += f"{turn}: "
                 print(f"{turn}: ", end="", flush=True)
-                # print(": ", end="", flush=True)
             # else:
             #     print(answer)
             #     print(prompt)
