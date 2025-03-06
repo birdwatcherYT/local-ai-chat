@@ -154,7 +154,7 @@ async def chat_start(cfg: Config):
                 else:
                     prev_turn = turn
                     turn = None
-            elif answer in char_names and prev_turn != turn:
+            elif answer in char_names and prev_turn != answer:
                 turn = answer
                 prompt += f"{turn}: "
                 print(f"{turn}: ", end="", flush=True)
