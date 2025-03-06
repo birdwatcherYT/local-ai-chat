@@ -35,11 +35,18 @@ chat:
     {ai0_name}: こんにちは。今日もお疲れ様。
   voice_input: null # null, vosk, whisper
   streaming_voice_output: ["。", "！", "？", "!", "?"]
+  use_openvino: true
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
   num_predict: 1000
   stop: ["\n", ":"] # 発話終了と話者生成のためのstopワード
+
+openvino:
+  model_path: Vecteus-v1
+  tokenizer_model: Local-Novel-LLM-project/Vecteus-v1
+  device: GPU
+  stop_words: ["\n", ":"]
 
 vosk: # 音声認識のモデルへのパス
   model_dir: ./vosk-model-ja-0.22

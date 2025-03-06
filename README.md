@@ -35,7 +35,17 @@
 - uv sync時のvoskのエラー
     - pyproject.tomlからvoskを削除してからuv.sync
 
+### openvino対応
+
+optimum-cliによるモデルの変換（`Local-Novel-LLM-project/Vecteus-v1`を例に）
+```bash
+uv sync --extra ov
+uv run optimum-cli export openvino --model Local-Novel-LLM-project/Vecteus-v1 --weight-format int8 --trust-remote-code Vecteus-v1
+```
+- エラーが出る場合は必要に応じて`huggingface-cli login`
+
 
 ## 使い方
 1. 音声合成を使う場合、裏でGUIを起動しておく
 2. `uv run inv chat`
+

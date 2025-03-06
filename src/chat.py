@@ -47,7 +47,12 @@ async def chat_start(cfg: Config):
     cfg.ollama.stop = [
         word.format(user_name=user_name, **ai_names) for word in cfg.ollama.stop
     ]
-    llm = ChatOllama(**cfg.ollama)
+    if cfg.chat.use_openvino:
+        from .ov import OpenVinoLLM
+
+        llm = OpenVinoLLM(**cfg.openvino)
+    else:
+        llm = ChatOllama(**cfg.ollama)
 
     # 音声認識の設定
     asr: SpeechToText = None
