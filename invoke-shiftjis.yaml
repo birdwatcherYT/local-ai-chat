@@ -3,6 +3,11 @@ chat:
     name: U # 呼ばれたい名前に変える
     character: | # あなたのプロフィール
       - 男
+    input: text # text, vosk, whisper, ai
+    voice: # aiモードのときのみ使う
+      engine: null # null, voicevox, coeiroink, aivisspeech
+      # config:
+      #   speaker_id: 13
   ai:
     - name: A # 呼びたい名前に変える
       character: | # ここにAIのキャラクターを書いておく
@@ -33,12 +38,11 @@ chat:
   initial_message: | # 最初の例を入れておくと従いやすい
     {user_name}: こんにちは。
     {ai0_name}: こんにちは。今日もお疲れ様。
-  voice_input: null # null, vosk, whisper
   streaming_voice_output: ["。", "！", "？", "!", "?"]
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
-  num_predict: 1000
+  num_predict: 200
   stop: ["\n", ":"] # 発話終了と話者生成のためのstopワード
 
 vosk: # 音声認識のモデルへのパス

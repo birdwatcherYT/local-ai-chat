@@ -32,9 +32,10 @@ async def synthesis_worker(
     while True:
         name, text_segment = await synthesis_queue.get()
         cfg = ai_config[name]
-        tts = engines[cfg["engine"]]
-        data, sr = await tts.synthesize_async(text_segment, **cfg["config"])
-        await playback_queue.put((data, sr))
+        if cfg["engine"] is not None:
+            tts = engines[cfg["engine"]]
+            data, sr = await tts.synthesize_async(text_segment, **cfg["config"])
+            await playback_queue.put((data, sr))
         synthesis_queue.task_done()
 
 
@@ -51,11 +52,11 @@ async def chat_start(cfg: Config):
 
     # 音声認識の設定
     asr: SpeechToText = None
-    if cfg.chat.voice_input == "vosk":
+    if cfg.chat.user.input == "vosk":
         from .asr.vosk_asr import VoskASR
 
         asr = VoskASR(**cfg.vosk)
-    elif cfg.chat.voice_input == "whisper":
+    elif cfg.chat.user.input == "whisper":
         from .asr.whisper_asr import WhisperASR
 
         asr = WhisperASR(**cfg.whisper, **cfg.webrtcvad)
@@ -67,6 +68,8 @@ async def chat_start(cfg: Config):
         "aivisspeech": AivisSpeech(),
     }
     ai_config = {ai["name"]: ai["voice"] for ai in cfg.chat.ai}
+    if cfg.chat.user.input == "ai":
+        ai_config[user_name] = cfg.chat.user.voice
 
     # 再生・合成用のグローバルなキューとワーカーを起動
     playback_queue = asyncio.Queue()
@@ -76,7 +79,7 @@ async def chat_start(cfg: Config):
         synthesis_worker(synthesis_queue, playback_queue, engines, ai_config)
     )
 
-    print(f"Chat Start: voice_input={cfg.chat.voice_input}")
+    print(f"Chat Start: user.input={cfg.chat.user.input}")
 
     chara_prompt = "\n".join([f"{ai['name']}\n{ai['character']}" for ai in cfg.chat.ai])
     prompt = f"[INST]\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n[/INST]\n{cfg.chat.initial_message}".format(
@@ -91,12 +94,12 @@ async def chat_start(cfg: Config):
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
         # ユーザー入力取得（音声入力の場合は asr.audio_input、テキストの場合は input()）
-        if turn == user_name:
-            if cfg.chat.voice_input:
+        if turn == user_name and cfg.chat.user.input != "ai":
+            if cfg.chat.user.input == "text":
+                user_input = await asyncio.to_thread(input)
+            else:
                 user_input = await asyncio.to_thread(asr.audio_input)
                 print(user_input, flush=True)
-            else:
-                user_input = await asyncio.to_thread(input)
 
             prompt += f"{user_input}\n"
             if len(char_names) == 2:
