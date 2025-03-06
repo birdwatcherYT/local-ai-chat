@@ -34,6 +34,6 @@ class VoskASR(SpeechToText):
                     continue
                 if rec.AcceptWaveform(data):
                     result = json.loads(rec.Result())
-                    text = result.get("text", "")
+                    text = result.get("text", "").replace(" ", "")
                     if text:
                         return text

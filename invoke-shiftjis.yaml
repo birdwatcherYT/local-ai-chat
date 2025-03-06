@@ -1,31 +1,45 @@
 chat:
-  user_name: USER # 呼ばれたい名前に変える
-  ai_name: AI # 呼びたい名前に変える
-  system_prompt: | # ここにAIのキャラクターを書いておく
-    あなたは{user_name}の友達「{ai_name}」です。
-    {user_name}が喜ぶことを言ってあげてください。
-  initial_message:
-    | # 最初の例を入れておくと従いやすい
+  user:
+    name: U # 呼ばれたい名前に変える
+    character: | # あなたのプロフィール
+      - 男
+  ai:
+    - name: A # 呼びたい名前に変える
+      character: | # ここにAIのキャラクターを書いておく
+        - {user_name}の女友達
+        - 穏やかで人よく褒める優しい性格
+      voice:
+        engine: voicevox # null, voicevox, coeiroink, aivisspeech
+        config:
+          speaker_id: 62
+        # engine: coeiroink
+        # config:
+        #   speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
+        #   style_id: 103
+        # engine: aivisspeech
+        # config:
+        #   speaker_id: 888753762
+    - name: B
+      character: |
+        - {user_name}の女友達
+        - {ai0_name}と仲が良い
+      voice:
+        engine: voicevox # null, voicevox, coeiroink, aivisspeech
+        config:
+          speaker_id: 0
+  system_prompt: |
+    {user_name}と{ai0_name}と{ai1_name}で対話を繰り広げてください。
+    "名前: 発言"の形式で1話者1行の形式で出力すること。
+  initial_message: | # 最初の例を入れておくと従いやすい
     {user_name}: こんにちは。
-    {ai_name}: こんにちは。今日もお疲れ様。
+    {ai0_name}: こんにちは。今日もお疲れ様。
   voice_input: null # null, vosk, whisper
-  voice_output: voicevox # null, voicevox, coeiroink, aivisspeech
-  streaming_voice_output: ["。", "！", "？"]
+  streaming_voice_output: ["。", "！", "？", "!", "?"]
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
   num_predict: 200
-  stop: ["\n"]
-
-voicevox:
-  speaker_id: 62
-
-coeiroink:
-  speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
-  style_id: 103
-
-aivisspeech:
-  speaker_id: 888753762
+  stop: ["\n", ":"] # 発話終了と話者生成のためのstopワード
 
 vosk: # 音声認識のモデルへのパス
   model_dir: ./vosk-model-ja-0.22
@@ -39,3 +53,14 @@ webrtcvad:
   # 1フレームあたり20ms
   hangover_threshold: 25
   pre_buffer_frames: 50
+
+# テスト用
+voicevox:
+  speaker_id: 62
+
+coeiroink:
+  speaker_uuid: d41bcbd9-f4a9-4e10-b000-7a431568dd01
+  style_id: 103
+
+aivisspeech:
+  speaker_id: 113804962
