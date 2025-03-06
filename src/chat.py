@@ -38,15 +38,6 @@ async def synthesis_worker(
         synthesis_queue.task_done()
 
 
-def parse_message(message):
-    parts = message.split(": ", 1)  # ": "で1回だけ分割
-    if len(parts) == 2:
-        name, text = parts
-        return name, text
-    else:
-        return None, message
-
-
 async def chat_start(cfg: Config):
     user_name = cfg.chat.user.name
     ai_names = {f"ai{i}_name": ai["name"] for i, ai in enumerate(cfg.chat.ai)}
