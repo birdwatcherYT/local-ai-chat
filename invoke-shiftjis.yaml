@@ -38,7 +38,7 @@ chat:
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
-  num_predict: 200
+  num_predict: 1000
   stop: ["\n", ":"] # 発話終了と話者生成のためのstopワード
 
 vosk: # 音声認識のモデルへのパス

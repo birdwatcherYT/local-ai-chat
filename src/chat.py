@@ -112,7 +112,7 @@ async def chat_start(cfg: Config):
                 prev_turn = turn
                 turn = char_names[0]
                 prompt += f"{turn}: "
-                print(f"{turn}: ", end="")
+                print(f"{turn}: ", end="", flush=True)
             else:
                 prev_turn = turn
                 turn = None
@@ -150,7 +150,7 @@ async def chat_start(cfg: Config):
                     prev_turn = turn
                     turn = char_names[1]
                     prompt += f"{turn}: "
-                    print(f"{turn}: ", end="")
+                    print(f"{turn}: ", end="", flush=True)
                 else:
                     prev_turn = turn
                     turn = None
