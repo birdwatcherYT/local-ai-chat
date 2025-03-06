@@ -88,12 +88,15 @@ async def chat_start(cfg: Config):
     print(f"Chat Start: voice_input={cfg.chat.voice_input}")
 
     chara_prompt = "\n".join([f"{ai['name']}\n{ai['character']}" for ai in cfg.chat.ai])
-    prompt = f"<system>\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n</system>\n{cfg.chat.initial_message}".format(
+    prompt = f"[INST]\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n[/INST]\n{cfg.chat.initial_message}".format(
         user_name=user_name, **ai_names
     )
     prev_turn = None
     turn = user_name
+    # print(prompt)
+
     print(f"{user_name}: ", end="", flush=True)
+    prompt += f"{turn}: "
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
         # ユーザー入力取得（音声入力の場合は asr.audio_input、テキストの場合は input()）
@@ -113,7 +116,6 @@ async def chat_start(cfg: Config):
             else:
                 prev_turn = turn
                 turn = None
-
 
         # テキスト生成結果を受け取るためのキューを各ターンごとに作成
         text_queue = asyncio.Queue()
