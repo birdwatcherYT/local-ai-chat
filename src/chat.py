@@ -88,6 +88,7 @@ async def chat_start(cfg: Config):
     prev_turn = None
     turn = user_name
     # print(prompt)
+    retry_num = 0
 
     print(f"{user_name}: ", end="", flush=True)
     prompt += f"{turn}: "
@@ -115,7 +116,7 @@ async def chat_start(cfg: Config):
         text_queue = asyncio.Queue()
 
         async def process_text_queue():
-            nonlocal prompt, turn, prev_turn
+            nonlocal prompt, turn, prev_turn, retry_num
             answer = ""
 
             while True:
@@ -125,6 +126,8 @@ async def chat_start(cfg: Config):
                 # 生成されたチャンクを即座に表示
                 if turn:
                     print(chunk.content, end="", flush=True)
+                elif cfg.chat.debug:
+                    print("debug: ", chunk.content, flush=True)
                 answer += chunk.content
                 # 指定された文字が現れたタイミングで音声合成
                 if turn and answer and answer[-1] in cfg.chat.streaming_voice_output:
@@ -148,14 +151,20 @@ async def chat_start(cfg: Config):
                 else:
                     prev_turn = turn
                     turn = None
+                retry_num = 0
             elif answer in char_names and prev_turn != answer:
                 turn = answer
                 prompt += f"{turn}: "
                 print(f"{turn}: ", end="", flush=True)
-            # else:
-            #     print(answer)
-            #     print(prompt)
-            #     exit(1)
+                retry_num = 0
+            elif retry_num >= cfg.chat.retry_num:
+                # 場面切り替わりやナレーションが入る場合の対策
+                prompt += f"\n[INST]{cfg.chat.retry_prompt}[/INST]\n"
+                retry_num = 0
+            else:
+                retry_num += 1
+                if cfg.chat.debug:
+                    print("debug: ", answer)
 
         # テキスト処理タスクを開始
         processing_task = asyncio.create_task(process_text_queue())

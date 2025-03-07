@@ -39,6 +39,9 @@ chat:
     {user_name}: こんにちは。
     {ai0_name}: こんにちは。今日もお疲れ様。
   streaming_voice_output: ["。", "！", "？", "!", "?"]
+  retry_num: 100
+  retry_prompt: 会話形式で続けてください。必要があればシーンを変えて進めましょう。
+  debug: false
 
 ollama:
   model: hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0
