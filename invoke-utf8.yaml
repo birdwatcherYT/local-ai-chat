@@ -41,6 +41,7 @@ chat:
   streaming_voice_output: ["。", "！", "？", "!", "?"]
   retry_num: 100
   retry_prompt: 会話形式で続けてください。必要があればシーンを変えて進めましょう。
+  initial_turn: "{user_name}"
   debug: false
 
 ollama:

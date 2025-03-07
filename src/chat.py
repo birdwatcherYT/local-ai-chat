@@ -86,11 +86,11 @@ async def chat_start(cfg: Config):
         user_name=user_name, **ai_names
     )
     prev_turn = None
-    turn = user_name
+    turn = cfg.chat.initial_turn.format(user_name=user_name, **ai_names)
     # print(prompt)
     retry_num = 0
 
-    print(f"{user_name}: ", end="", flush=True)
+    print(f"{turn}: ", end="", flush=True)
     prompt += f"{turn}: "
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
