@@ -39,9 +39,15 @@ chat:
     {user_name}: こんにちは。
     {ai0_name}: こんにちは。今日もお疲れ様。
   streaming_voice_output: ["。", "！", "？", "!", "?"]
-  retry_num: 100
-  retry_prompt: 会話形式で続けてください。必要があればシーンを変えて進めましょう。
   initial_turn: "{user_name}"
+  retry: # ナレーションなどで、ターン切り替えがうまくいかないとき
+    num: 5 # リトライ回数
+    # 以下どちらかが必要(両方でもいい)
+    turn: "{user_name}" # 強制切り替え先
+    prompt: 1人ずつの会話形式で次の展開へ # ターン生成を促す追加指示
+  summary: # プロンプトが長くなったときのメッセージ要約
+    length: 1000 # 要約発生基準
+    tail: 5 # 残す直近メッセージ
   debug: false
 
 ollama:

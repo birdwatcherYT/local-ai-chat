@@ -79,19 +79,26 @@ async def chat_start(cfg: Config):
         synthesis_worker(synthesis_queue, playback_queue, engines, ai_config)
     )
 
-    print(f"Chat Start: user.input={cfg.chat.user.input}")
+    print(f"Chat Start: user.input={cfg.chat.user.input}", flush=True)
 
     chara_prompt = "\n".join([f"{ai['name']}\n{ai['character']}" for ai in cfg.chat.ai])
-    prompt = f"[INST]\n{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}\n[/INST]\n{cfg.chat.initial_message}".format(
+    instruct_prompt = f"{cfg.chat.system_prompt}\n{user_name}\n{cfg.chat.user.character}\n{chara_prompt}".format(
         user_name=user_name, **ai_names
     )
+    messages = cfg.chat.initial_message.format(user_name=user_name, **ai_names)
+    cfg.chat.retry.turn = cfg.chat.retry.turn.format(user_name=user_name, **ai_names)
+    cfg.chat.retry.prompt = cfg.chat.retry.prompt.format(
+        user_name=user_name, **ai_names
+    )
+
     prev_turn = None
     turn = cfg.chat.initial_turn.format(user_name=user_name, **ai_names)
-    # print(prompt)
     retry_num = 0
 
     print(f"{turn}: ", end="", flush=True)
-    prompt += f"{turn}: "
+    messages += f"{turn}: "
+    summary = ""
+    prompt = ""
     # チャット全体をループで実行（各ターンごとにユーザー入力とテキスト生成を処理）
     while True:
         # ユーザー入力取得（音声入力の場合は asr.audio_input、テキストの場合は input()）
@@ -102,11 +109,11 @@ async def chat_start(cfg: Config):
                 user_input = await asyncio.to_thread(asr.audio_input)
                 print(user_input, flush=True)
 
-            prompt += f"{user_input}\n"
+            messages += f"{user_input}\n"
             if len(char_names) == 2:
                 prev_turn = turn
                 turn = char_names[0]
-                prompt += f"{turn}: "
+                messages += f"{turn}: "
                 print(f"{turn}: ", end="", flush=True)
             else:
                 prev_turn = turn
@@ -116,7 +123,7 @@ async def chat_start(cfg: Config):
         text_queue = asyncio.Queue()
 
         async def process_text_queue():
-            nonlocal prompt, turn, prev_turn, retry_num
+            nonlocal messages, turn, prev_turn, retry_num
             answer = ""
 
             while True:
@@ -132,21 +139,22 @@ async def chat_start(cfg: Config):
                 # 指定された文字が現れたタイミングで音声合成
                 if turn and answer and answer[-1] in cfg.chat.streaming_voice_output:
                     await synthesis_queue.put((turn, answer))
-                    prompt += answer
+                    messages += answer
                     answer = ""
                 text_queue.task_done()
             if turn and answer:
                 await synthesis_queue.put((turn, answer))
-                prompt += answer
+                messages += answer
                 answer = ""
 
             if turn:
-                prompt += "\n"
+                # 上記でメッセージ追記後の改行
+                messages += "\n"
                 print()
                 if len(char_names) == 2:
                     prev_turn = turn
                     turn = char_names[1]
-                    prompt += f"{turn}: "
+                    messages += f"{turn}: "
                     print(f"{turn}: ", end="", flush=True)
                 else:
                     prev_turn = turn
@@ -154,23 +162,35 @@ async def chat_start(cfg: Config):
                 retry_num = 0
             elif answer in char_names and prev_turn != answer:
                 turn = answer
-                prompt += f"{turn}: "
+                messages += f"{turn}: "
                 print(f"{turn}: ", end="", flush=True)
                 retry_num = 0
-            elif retry_num >= cfg.chat.retry_num:
+            elif retry_num >= cfg.chat.retry.num:
                 # 場面切り替わりやナレーションが入る場合の対策
-                prompt += f"\n[INST]{cfg.chat.retry_prompt}[/INST]\n"
+                if cfg.chat.retry.prompt:
+                    messages += f"[INST]{cfg.chat.retry.prompt}[/INST]\n"
+                    if cfg.chat.debug:
+                        print(f"debug: 指示追加", flush=True)
+                if cfg.chat.retry.turn:
+                    prev_turn = None
+                    turn = cfg.chat.retry.turn
+                    messages += f"{turn}: "
+                    print(f"{turn}: ", end="", flush=True)
+                    if cfg.chat.debug:
+                        print(f"debug: 強制ターン変更", flush=True)
                 retry_num = 0
             else:
                 retry_num += 1
                 if cfg.chat.debug:
-                    print("debug: ", answer)
+                    print(f"debug: [{retry_num}]", answer, flush=True)
 
         # テキスト処理タスクを開始
         processing_task = asyncio.create_task(process_text_queue())
 
         # 同期の llm.stream() を別スレッドで実行し、その結果を text_queue に投入する
         loop = asyncio.get_running_loop()
+
+        prompt = f"[INST]\n{instruct_prompt}\n{summary}\n[/INST]\n{messages}"
 
         def generate_text():
             for chunk in llm.stream(prompt):
@@ -181,3 +201,29 @@ async def chat_start(cfg: Config):
         await asyncio.to_thread(generate_text)
         # テキスト処理タスクが完了するのを待つ
         await processing_task
+        if cfg.chat.debug:
+            print("debug: ", len(messages), flush=True)
+
+        def run_summary():
+            nonlocal messages, summary, prompt
+            print("要約中", flush=True)
+            prompt = f"[INST]\n{instruct_prompt}\n{summary}\n[/INST]\n{messages}"
+            # resp = llm.invoke(f"{messages}\n上記会話を1行で要約してください。\n")
+            resp = llm.invoke(
+                f"{prompt}\n[INST]上記会話を1行で要約してください。[/INST]\n"
+            )
+            summary = f"これまでの要約: {resp.content}"
+            print(summary, flush=True)
+            if cfg.chat.debug:
+                print("debug:", summary, flush=True)
+            message_list = messages.split("\n")
+            cut_message_list = message_list[-cfg.chat.summary.tail :]
+            if cfg.chat.debug:
+                print(
+                    "debug:", len(message_list), "->", len(cut_message_list), flush=True
+                )
+            messages = "\n".join(cut_message_list)
+            prompt = f"[INST]\n{instruct_prompt}\n{summary}\n[/INST]\n{messages}"
+
+        if len(messages) > cfg.chat.summary.length:
+            await asyncio.to_thread(run_summary)
