@@ -201,8 +201,6 @@ async def chat_start(cfg: Config):
         await asyncio.to_thread(generate_text)
         # テキスト処理タスクが完了するのを待つ
         await processing_task
-        if cfg.chat.debug:
-            print("debug: ", len(messages), flush=True)
 
         def run_summary():
             nonlocal messages, summary, prompt
