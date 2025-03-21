@@ -142,6 +142,8 @@ async def chat_start(cfg: Config):
                     messages += answer
                     answer = ""
                 text_queue.task_done()
+
+            answer = answer.strip()
             if turn and answer:
                 await synthesis_queue.put((turn, answer))
                 messages += answer

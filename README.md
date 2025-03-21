@@ -6,6 +6,7 @@
     - pythonと[uv](https://github.com/astral-sh/uv)インストール済みであることが前提
 - ollamaで日本語対応モデルを使えるようにしておく
     - 例: `ollama run hf.co/mmnga/umiyuki-Umievo-itr012-Gleipnir-7B-gguf:Q8_0`
+    - モデルが変わるとターン制御でうまくいかないことがあり、コードを修正する必要が出てきます
 - 音声合成を使う場合（使うものを選択してインストール）
     - [VOICEVOX](https://voicevox.hiroshiba.jp/)をインストール
     - [COEIROINK](https://coeiroink.com/download)をインストール
