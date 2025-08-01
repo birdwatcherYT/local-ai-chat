@@ -1,6 +1,9 @@
 # local-ai-chat
 すべてローカルで動作するAIチャット
 
+**このレポの強化版はこちら: [ai-chat](https://github.com/birdwatcherYT/ai-chat)**
+
+
 ## 環境構築
 - `uv sync`
     - pythonと[uv](https://github.com/astral-sh/uv)インストール済みであることが前提
